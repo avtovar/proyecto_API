@@ -1,0 +1,134 @@
+name: CI - Airline API
+run-name: CI ${{ github.ref_name }}   # Nombre de la ejecución, muestra la rama
+
+# Eventos que activan el workflow
+on:
+  push:
+    branches: [ "main" ]              # Se ejecuta al hacer push a main
+  pull_request:
+    branches: [ "main" ]              # Se ejecuta en PR hacia main
+  workflow_dispatch:                  # Permite lanzarlo manualmente
+
+# Permisos de seguridad
+permissions:
+  contents: read                      # Lectura del repositorio
+
+# Control de concurrencia para optimizar recursos
+concurrency:
+  group: ci-${{ github.ref }}         # Evita ejecuciones duplicadas por rama
+  cancel-in-progress: true            # Cancela ejecuciones previas en curso
+
+jobs:
+  test:
+    runs-on: ubuntu-latest            # Entorno: última versión de Ubuntu
+
+    steps:
+      # Paso 1: Obtener el código del repositorio
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4     # Clona el código del repo
+
+      # Paso 2: Configurar Python
+      - name: 🐍 Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"      # Versión específica de Python
+
+      # Paso 3: Cache de dependencias para builds más rápidos
+      - name: ♻️ Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: pip-${{ runner.os }}-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            pip-${{ runner.os }}-
+
+      # Paso 4: Instalar dependencias de Python
+      - name: 📦 Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt 
+          else
+            # Instalar dependencias por defecto para testing
+            pip install pytest selenium webdriver-manager pytest-html pytest-cov behave pytest-bdd
+          fi
+
+      # Paso 5: Instalar Google Chrome para pruebas con Selenium
+      - name: 🌐 Install Google Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable      # Versión estable de Chrome
+
+      # Paso 6: Instalar Xvfb para ejecución headless de navegador
+      - name: 🖥️ Install Xvfb
+        run: sudo apt-get install -y xvfb  # Necessary for headless browser testing
+
+      # Paso 7: Configurar archivo de entorno
+      - name: ⚙️ Prepare environment file
+        run: |
+          # Copiar archivo de ejemplo o crear uno básico si no existe
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            echo "# Environment variables" > .env
+            echo "BASE_URL=http://localhost:8000" >> .env
+          fi
+
+      # Paso 8: Verificar que el setup esté correcto
+      - name: ✅ Verify setup
+        run: |
+          python --version
+          pip list | grep -E "(pytest|selenium|cov|behave)"
+          which google-chrome
+          which Xvfb
+
+      # Paso 9: Ejecutar pruebas con cobertura y reportes
+      - name: 🧪 Run tests with Pytest
+        env:
+          BASE_URL: ${{ secrets.BASE_URL }}
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+        run: |
+          # Crear directorio para reportes
+          mkdir -p reports
+          mkdir -p screenshots
+          
+          # Ejecutar pruebas con Xvfb para entorno headless
+          xvfb-run -a pytest -q --maxfail=1 --disable-warnings \
+            --html=reports/pytest-report.html --self-contained-html \
+            --junitxml=reports/junit.xml \
+            --cov=. --cov-report=term-missing --cov-report=xml:reports/coverage.xml \
+            --cov-report=html:reports/coverage-html
+          
+          # Mostrar resumen de cobertura en consola
+          python -m coverage report
+
+      # Paso 10: Subir reportes y screenshots como artifacts
+      - name: 📊 Upload test artifacts (reports and screenshots)
+        if: always()  # Siempre sube artifacts, incluso si fallan las pruebas
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-artifacts-${{ github.run_id }}
+          path: |
+            reports/**
+            **/screenshots/**
+          if-no-file-found: ignore
+          retention-days: 7  # Conservar artifacts por 7 días
+
+      # Paso 11: Opcional - Subir reporte de cobertura a Codecov
+      - name: 📈 Upload coverage to Codecov (Optional)
+        if: success()  # Solo si las pruebas pasan
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./reports/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      # Paso 12: Notificación en caso de fallo
+      - name: ❌ Notify on failure
+        if: failure()  # Solo se ejecuta si el job falla
+        run: |
+          echo "Tests failed! Check the artifacts for details."
+          # Aquí podrías agregar notificaciones a Slack/Email/etc.
+
