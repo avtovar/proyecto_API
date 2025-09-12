@@ -14,7 +14,7 @@ airport_schema = {
         "city": {"type": "string"},
         "country": {"type": "string"},
     },
-    "addtionalProperties": False
+  "addtionalProperties": False
 }
 
 

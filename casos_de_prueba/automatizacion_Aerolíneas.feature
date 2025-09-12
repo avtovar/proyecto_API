@@ -1,7 +1,6 @@
-Feature: Registro de usuario en la API de Airline
-  Como nuevo usuario
-  Quiero registrarme con email, contraseña y nombre completo
-  Para poder autenticarse luego en la plataforma
+Feature: API de Automatización de Aerolíneas
+  Como usuario quiero poder gestionar aerolíneas, vuelos y reservas
+  Para automatizar los procesos de una aerolínea
 
   # --- Auth ---
 
@@ -19,14 +18,6 @@ Feature: Registro de usuario en la API de Airline
     When ejecuto la petición
     Then la respuesta debe tener status 400
     And la respuesta debe incluir un campo "detail" con valor "Email already registered"
-
-# ========================================================================
-# Lo que ya tenías antes (Airlines, Flights, Bookings, Validaciones...)
-# ========================================================================
-
-Feature: API de Automatización de Aerolíneas
-  Como usuario quiero poder gestionar aerolíneas, vuelos y reservas
-  Para automatizar los procesos de una aerolínea
 
   # --- Airlines ---
 
