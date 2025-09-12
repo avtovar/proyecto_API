@@ -9,7 +9,6 @@ on:
     branches: [ "master" ]              # Se ejecuta en PR hacia main
   workflow_dispatch:                  # Permite lanzarlo manualmente
 
-
 # Permisos de seguridad
 permissions:
   contents: read                      # Lectura del repositorio
