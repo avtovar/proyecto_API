@@ -18,7 +18,6 @@ support_user_data = {
     "role": "admin"
 }
 
-
 def login_as_admin():
     r = requests.post(URL + AUTH_LOGIN, data=admin_data)
     return r
