@@ -4,9 +4,9 @@ run-name: CI ${{ github.ref_name }}   # Nombre de la ejecución, muestra la rama
 # Eventos que activan el workflow
 on:
   push:
-    branches: [ "main" ]              # Se ejecuta al hacer push a main
+    branches: [ "master" ]              # Se ejecuta al hacer push a main
   pull_request:
-    branches: [ "main" ]              # Se ejecuta en PR hacia main
+    branches: [ "master" ]              # Se ejecuta en PR hacia main
   workflow_dispatch:                  # Permite lanzarlo manualmente
 
 # Permisos de seguridad
