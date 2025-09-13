@@ -1,4 +1,4 @@
-import requests
+"""import requests
 import json
 import logging
 import os
@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class AirlineAPIClient:
-    """Cliente para interactuar con la API de automatización de aerolínea"""
+
+    Cliente para interactuar con la API de automatización de aerolínea
+
 
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
@@ -25,11 +27,15 @@ class AirlineAPIClient:
         }
 
     def _build_url(self, endpoint: str) -> str:
-        """Construye la URL completa para un endpoint"""
+
+        Construye la URL completa para un endpoint
+
         return f"{self.base_url}/{endpoint.lstrip('/')}"
 
     def _handle_response(self, response: requests.Response) -> Dict[str, Any]:
-        """Maneja la respuesta de la API y devuelve los datos JSON"""
+
+        Maneja la respuesta de la API y devuelve los datos JSON
+
         try:
             response.raise_for_status()
             return response.json()
@@ -43,7 +49,9 @@ class AirlineAPIClient:
             raise
 
     def login(self, username: str, password: str) -> Dict[str, Any]:
-        """Inicia sesión en la API y guarda el token de autenticación"""
+
+        Inicia sesión en la API y guarda el token de autenticación
+
         endpoint = "auth/login/"
         url = self._build_url(endpoint)
 
@@ -65,7 +73,9 @@ class AirlineAPIClient:
             raise
 
     def create_user(self, user_data: Dict[str, Any]) -> Dict[str, Any]:
-        """Crea un nuevo usuario"""
+
+        Crea un nuevo usuario
+
         endpoint = "users/"
         url = self._build_url(endpoint)
 
@@ -77,7 +87,9 @@ class AirlineAPIClient:
             raise
 
     def list_users(self, skip: int = 0, limit: int = 10) -> Dict[str, Any]:
-        """Obtiene la lista de usuarios"""
+
+        Obtiene la lista de usuarios
+
         endpoint = f"users?skip={skip}&limit={limit}"
         url = self._build_url(endpoint)
 
@@ -106,7 +118,9 @@ SUPPORT_USER_DATA = {
 
 
 def master():
-    """Función principal para demostrar el uso del cliente API"""
+
+    Función principal para demostrar el uso del cliente API
+
     client = AirlineAPIClient(BASE_URL)
 
     try:
@@ -128,3 +142,4 @@ def master():
 
 if __name__ == "__main__":
     master()
+"""

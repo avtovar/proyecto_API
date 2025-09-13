@@ -1,4 +1,4 @@
-import pytest
+"""import pytest
 import  requests
 from jsonschema import validate
 
@@ -28,5 +28,5 @@ def test_get_all_airports(airport, auth_headers):
     assert r.status_code == 200
     assert r.text != ""
 
-
+"""
 

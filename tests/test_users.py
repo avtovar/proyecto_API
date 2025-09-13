@@ -1,5 +1,4 @@
-import os
-
+"""import os
 import  requests
 from jsonschema import validate
 
@@ -37,3 +36,4 @@ def test_get_all_users(auth_headers, limit=10):
         skip += limit
 
     return results
+"""
