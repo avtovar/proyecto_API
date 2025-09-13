@@ -1,4 +1,4 @@
-# cf-automation-api-test
+# Proyecto_API
 
 Descripción General
 Este proyecto implementa la automatización de pruebas para la API de la aerolínea disponible en:
