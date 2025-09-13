@@ -53,7 +53,13 @@ jobs:
             pip install pytest selenium webdriver-manager pytest-html pytest-cov behave pytest-bdd
           fi
 
-      # Paso 5: Configurar archivo de entorno
+      # Paso 5: Borrar Cache
+      - name: Clean caches
+        run: |
+          rm -rf **/__pycache__ .pytest_cache
+          find . -type f -name "*.pyc" -delete
+
+      # Paso 6: Configurar archivo de entorno
       - name: ⚙️ Prepare environment file
         run: |
           # Copiar archivo de ejemplo o crear uno básico si no existe
@@ -64,7 +70,7 @@ jobs:
             echo "BASE_URL=http://localhost:8000" >> .env
           fi
 
-      # Paso 6: Verificar que el setup esté correcto
+      # Paso 7: Verificar que el setup esté correcto
       - name: ✅ Verify setup
         run: |
           python --version
@@ -72,7 +78,7 @@ jobs:
           which google-chrome
           which Xvfb
 
-      # Paso 7: Ejecutar pruebas con cobertura y reportes
+      # Paso 8: Ejecutar pruebas con cobertura y reportes
       - name: 🧪 Run tests with Pytest
         env:
           BASE_URL: ${{ secrets.BASE_URL }}
@@ -93,7 +99,7 @@ jobs:
           # Mostrar resumen de cobertura en consola
           python -m coverage report
 
-      # Paso 8: Subir reportes y screenshots como artifacts
+      # Paso 9: Subir reportes y screenshots como artifacts
       - name: 📊 Upload test artifacts (reports and screenshots)
         if: always()  # Siempre sube artifacts, incluso si fallan las pruebas
         uses: actions/upload-artifact@v4
@@ -105,7 +111,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7  # Conservar artifacts por 7 días
 
-      # Paso 9: Opcional - Subir reporte de cobertura a Codecov
+      # Paso 10: Opcional - Subir reporte de cobertura a Codecov
       - name: 📈 Upload coverage to Codecov (Optional)
         if: success()  # Solo si las pruebas pasan
         uses: codecov/codecov-action@v3
@@ -115,7 +121,7 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      # Paso 10: Notificación en caso de fallo
+      # Paso 11: Notificación en caso de fallo
       - name: ❌ Notify on failure
         if: failure()  # Solo se ejecuta si el job falla
         run: |
