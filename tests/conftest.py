@@ -1,5 +1,5 @@
 """
-🔹 conftest.py
+conftest.py
 Fixtures globales para pruebas de la API de Aerolínea.
 
 Incluye:
@@ -9,9 +9,10 @@ Incluye:
 - airport: crea y elimina un aeropuerto temporal.
 - user: crea y elimina un usuario temporal.
 
-Requiere variables de entorno:
+Requiere variables de entorno en .env:
     ADMIN_USER=usuario_admin
     ADMIN_PASS=clave_admin
+    BASE_URL=url_api
 """
 
 import os
@@ -22,10 +23,9 @@ import requests
 import faker
 from dotenv import load_dotenv
 
-# 📌 Cargar variables desde archivo .env (si existe)
+# 📌 Cargar variables desde archivo .env
 load_dotenv()
 
-# 🧪 Generador de datos aleatorios
 fake = faker.Faker()
 
 
@@ -33,19 +33,13 @@ fake = faker.Faker()
 
 @pytest.fixture(scope="session")
 def base_url() -> str:
-    """
-    Devuelve la URL base de la API.
-    Centralizar aquí facilita cambiar de entorno (dev, staging, prod).
-    """
-    return "https://cf-automation-airline-api.onrender.com"
+    """Devuelve la URL base de la API"""
+    return os.getenv("BASE_URL", "https://cf-automation-airline-api.onrender.com")
 
 
 @pytest.fixture(scope="session")
 def admin_token(base_url: str) -> str:
-    """
-    Obtiene un token JWT válido para el administrador.
-    Requiere que ADMIN_USER y ADMIN_PASS estén configurados.
-    """
+    """Obtiene un token JWT válido para el administrador"""
     user = os.getenv("ADMIN_USER")
     pwd = os.getenv("ADMIN_PASS")
 
@@ -54,11 +48,7 @@ def admin_token(base_url: str) -> str:
 
     login_url = f"{base_url}/auth/login/"
 
-    r = requests.post(
-        login_url,
-        data={"username": user, "password": pwd},
-        timeout=5
-    )
+    r = requests.post(login_url, data={"username": user, "password": pwd}, timeout=5)
     r.raise_for_status()
 
     token = r.json().get("access_token")
@@ -70,9 +60,7 @@ def admin_token(base_url: str) -> str:
 
 @pytest.fixture
 def auth_headers(admin_token: str) -> dict:
-    """
-    Devuelve headers con autenticación JWT.
-    """
+    """Devuelve headers con autenticación JWT"""
     return {"Authorization": f"Bearer {admin_token}"}
 
 
@@ -82,19 +70,19 @@ def airport(base_url: str, auth_headers: dict):
     Crea un aeropuerto temporal antes de la prueba
     y lo elimina automáticamente después (teardown).
     """
-    aiport_data = {
+    airport_data = {
         "iata_code": "".join(random.choices(string.ascii_uppercase, k=3)),
         "city": "La Paz",
         "country": "ARG"
     }
 
-    r = requests.post(f"{base_url}/airports/", json=aiport_data, headers=auth_headers, timeout=5)
+    r = requests.post(f"{base_url}/airports/", json=airport_data, headers=auth_headers, timeout=5)
     r.raise_for_status()
     airport_response = r.json()
 
-    yield airport_response  # 🔹 Entrega el aeropuerto a la prueba
+    yield airport_response  # Entrega el aeropuerto a la prueba
 
-    # 🔻 Teardown: borrar aeropuerto creado
+    # Teardown: borrar aeropuerto creado
     requests.delete(
         f"{base_url}/airports/{airport_response['iata_code']}",
         headers=auth_headers,
@@ -115,13 +103,13 @@ def user(base_url: str, auth_headers: dict, role: str = "passenger"):
         "role": role
     }
 
-    r = requests.post(f"{base_url}/users", json=user_data, headers=auth_headers, timeout=5)
+    r = requests.post(f"{base_url}/users/", json=user_data, headers=auth_headers, timeout=5)
     r.raise_for_status()
     user_created = r.json()
 
-    yield user_created  # 🔹 Entrega el usuario a la prueba
+    yield user_created  # Entrega el usuario a la prueba
 
-    # 🔻 Teardown: borrar usuario creado
+    # Teardown: borrar usuario creado
     requests.delete(
         f"{base_url}/users/{user_created['id']}",
         headers=auth_headers,

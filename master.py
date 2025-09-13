@@ -1,7 +1,12 @@
 import requests
 import json
 import logging
-from typing import Dict, Any, Optional
+import os
+from typing import Dict, Any
+from dotenv import load_dotenv
+
+# 📌 Cargar variables de entorno
+load_dotenv()
 
 # Configuración básica de logging
 logging.basicConfig(level=logging.INFO)
@@ -42,13 +47,10 @@ class AirlineAPIClient:
         endpoint = "auth/login/"
         url = self._build_url(endpoint)
 
-        login_data = {
-            "username": username,
-            "password": password
-        }
+        login_data = {"username": username, "password": password}
 
         try:
-            response = requests.post(url, json=login_data, headers=self.headers)
+            response = requests.post(url, json=login_data, headers=self.headers, timeout=5)
             result = self._handle_response(response)
 
             # Guardar el token para futuras solicitudes
@@ -68,7 +70,7 @@ class AirlineAPIClient:
         url = self._build_url(endpoint)
 
         try:
-            response = requests.post(url, json=user_data, headers=self.headers)
+            response = requests.post(url, json=user_data, headers=self.headers, timeout=5)
             return self._handle_response(response)
         except Exception as e:
             logger.error(f"Error creando usuario: {e}")
@@ -80,23 +82,21 @@ class AirlineAPIClient:
         url = self._build_url(endpoint)
 
         try:
-            response = requests.get(url, headers=self.headers)
+            response = requests.get(url, headers=self.headers, timeout=5)
             return self._handle_response(response)
         except Exception as e:
             logger.error(f"Error obteniendo usuarios: {e}")
             raise
 
 
-# Datos de configuración
-BASE_URL = "https://cf-automation-airline-api.onrender.com"
+# -------------------- CONFIG --------------------
+BASE_URL = os.getenv("BASE_URL", "https://cf-automation-airline-api.onrender.com")
 
-# Datos de usuario administrador
 ADMIN_CREDENTIALS = {
-    "username": "admin@demo.com",
-    "password": "admin123"
+    "username": os.getenv("ADMIN_USER"),
+    "password": os.getenv("ADMIN_PASS")
 }
 
-# Datos del usuario de soporte a crear
 SUPPORT_USER_DATA = {
     "email": "helios123@airline.com",
     "password": "helios12345",
@@ -107,7 +107,6 @@ SUPPORT_USER_DATA = {
 
 def master():
     """Función principal para demostrar el uso del cliente API"""
-    # Crear instancia del cliente
     client = AirlineAPIClient(BASE_URL)
 
     try:
@@ -119,12 +118,13 @@ def master():
         user_creation_result = client.create_user(SUPPORT_USER_DATA)
         logger.info(f"Usuario creado: {user_creation_result}")
 
-        # Listar usuarios (opcional)
+        # Listar usuarios
         users = client.list_users()
         logger.info(f"Usuarios en el sistema: {len(users.get('users', []))}")
 
     except Exception as e:
         logger.error(f"Error en la ejecución: {e}")
 
-if __name__ == "__master__":
+
+if __name__ == "__main__":
     master()
