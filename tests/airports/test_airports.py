@@ -1,5 +1,5 @@
 import pytest
-import  requests
+import requests
 from jsonschema import validate
 
 BASE_URL = "https://cf-automation-airline-api.onrender.com"

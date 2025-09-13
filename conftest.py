@@ -13,13 +13,22 @@ fake = faker.Faker()
 
 @pytest.fixture(scope="session")
 def admin_token() -> str:
-    user = os.getenv("ADMIN_USER")
-    pwd = os.getenv("ADMIN_PASS")
+    user = os.getenv("ADMIN_USER", "admin@demo.com")
+    pwd = os.getenv("ADMIN_PASS", "admin123")
 
-    r = requests.post(BASE_URL + AUTH_LOGIN,
-                      data={"username": user, "password": pwd},
-                      timeout=5)
-
+    r = requests.post(
+        BASE_URL + AUTH_LOGIN,
+        data={
+            "grant_type": "",
+            "username": user,
+            "password": pwd,
+            "scope": "",
+            "client_id": "",
+            "client_secret": ""
+        },
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        timeout=5
+    )
     r.raise_for_status()
     return r.json()["access_token"]
 
