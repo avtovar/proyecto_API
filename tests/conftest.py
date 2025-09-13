@@ -85,7 +85,7 @@ def airport(base_url: str, auth_headers: dict):
     aiport_data = {
         "iata_code": "".join(random.choices(string.ascii_uppercase, k=3)),
         "city": "La Paz",
-        "country": fake.country_code()
+        "country": "ARG"
     }
 
     r = requests.post(f"{base_url}/airports/", json=aiport_data, headers=auth_headers, timeout=5)
