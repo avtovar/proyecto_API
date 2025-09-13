@@ -58,18 +58,20 @@ def admin_token(base_url: str) -> str:
     return token
 
 
-@pytest.fixture
+"""@pytest.fixture
 def auth_headers(admin_token: str) -> dict:
-    """Devuelve headers con autenticación JWT"""
+    
+    Devuelve headers con autenticación JWT
+    
     return {"Authorization": f"Bearer {admin_token}"}
 
 
 @pytest.fixture
 def airport(base_url: str, auth_headers: dict):
-    """
+    
     Crea un aeropuerto temporal antes de la prueba
     y lo elimina automáticamente después (teardown).
-    """
+    
     airport_data = {
         "iata_code": "".join(random.choices(string.ascii_uppercase, k=3)),
         "city": "La Paz",
@@ -92,10 +94,10 @@ def airport(base_url: str, auth_headers: dict):
 
 @pytest.fixture
 def user(base_url: str, auth_headers: dict, role: str = "passenger"):
-    """
+    
     Crea un usuario temporal antes de la prueba
     y lo elimina automáticamente después (teardown).
-    """
+    
     user_data = {
         "email": fake.email(),
         "password": fake.password(),
@@ -115,3 +117,4 @@ def user(base_url: str, auth_headers: dict, role: str = "passenger"):
         headers=auth_headers,
         timeout=5
     )
+"""""
