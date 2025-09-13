@@ -1,7 +1,6 @@
 import os
 import random
 import string
-
 import requests, pytest, faker
 from dotenv import load_dotenv
 
@@ -26,10 +25,16 @@ def admin_token() -> str:
             "client_id": "",
             "client_secret": ""
         },
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        headers={
+            "accept": "application/json",
+            "Content-Type": "application/x-www-form-urlencoded"
+        },
         timeout=5
     )
-    r.raise_for_status()
+
+    if r.status_code != 200:
+        raise RuntimeError(f"Login failed ({r.status_code}): {r.text}")
+
     return r.json()["access_token"]
 
 
