@@ -105,7 +105,7 @@ SUPPORT_USER_DATA = {
 }
 
 
-def main():
+def master():
     """Función principal para demostrar el uso del cliente API"""
     # Crear instancia del cliente
     client = AirlineAPIClient(BASE_URL)
@@ -126,5 +126,5 @@ def main():
     except Exception as e:
         logger.error(f"Error en la ejecución: {e}")
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__master__":
+    master()
