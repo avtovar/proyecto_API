@@ -28,5 +28,4 @@ def signup_support_user(support_data):
     r = requests.post(URL + AUTH_SIGNUP, json=support_data,
                       headers={"Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c3ItMmIzM2M2YTEiLCJyb2xlIjoiYWRtaW4ifQ.rWFwFMLax1o_Qu8h5nMX8ePLZVDvluJZK63tT85XC1I"})
     return r
-
 print(signup_support_user(support_user_data).json())
