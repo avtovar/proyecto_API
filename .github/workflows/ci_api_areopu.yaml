@@ -54,15 +54,15 @@ jobs:
           fi
 
       # Paso 5: Configurar archivo de entorno
-      #- name: ⚙️ Prepare environment file
-      #  run: |
-      #    # Copiar archivo de ejemplo o crear uno básico si no existe
-      #    if [ -f .env.example ]; then
-      #      cp .env.example .env
-      #    else
-      #      echo "# Environment variables" > .env
-     #       echo "BASE_URL=http://localhost:8000" >> .env
-      #    fi
+      - name: ⚙️ Prepare environment file
+        run: |
+          # Copiar archivo de ejemplo o crear uno básico si no existe
+          if [ -f .env.example ]; then
+            cp .env.example .env
+          else
+            echo "# Environment variables" > .env
+            echo "BASE_URL=http://localhost:8000" >> .env
+          fi
 
       # Paso 6: Verificar que el setup esté correcto
       - name: ✅ Verify setup
