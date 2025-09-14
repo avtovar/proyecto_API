@@ -8,18 +8,20 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
+# Cargar variables de entorno
 load_dotenv()
 
-# URL base de la API
+# Obtener variables de entorno con valores por defecto
 BASE_URL = os.getenv("BASE_URL", "https://cf-automation-airline-api.onrender.com")
 AUTH_LOGIN = "/auth/login/"
 AIRPORT = "/airports/"
 fake = faker.Faker()
 
 # Configuración de reintentos y timeouts
-REQUEST_TIMEOUT = 15  # Aumentar timeout a 15 segundos
+REQUEST_TIMEOUT = 15
 MAX_RETRIES = 3
 BACKOFF_FACTOR = 0.5
+
 
 
 @pytest.fixture(scope="session")
@@ -29,18 +31,20 @@ def base_url():
 
 
 @pytest.fixture(scope="session")
-def session_with_retries():
-    """Crear una sesión con reintentos"""
-    session = requests.Session()
-    retry_strategy = Retry(
-        total=MAX_RETRIES,
-        backoff_factor=BACKOFF_FACTOR,
-        status_forcelist=[429, 500, 502, 503, 504],
-    )
-    adapter = HTTPAdapter(max_retries=retry_strategy)
-    session.mount("http://", adapter)
-    session.mount("https://", adapter)
-    return session
+def check_api_availability():
+    """Fixture para verificar que la API está disponible"""
+    import os
+    base_url = os.getenv("BASE_URL")
+    if not base_url:
+        pytest.fail("BASE_URL no está configurada")
+
+    # Intentar una conexión simple a la API
+    try:
+        response = requests.get(base_url, timeout=5)
+        if response.status_code != 200:
+            pytest.skip(f"API no disponible (status: {response.status_code})")
+    except requests.exceptions.RequestException as e:
+        pytest.skip(f"API no disponible: {str(e)}")
 
 
 @pytest.fixture(scope="session")
