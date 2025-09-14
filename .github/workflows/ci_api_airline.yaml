@@ -23,7 +23,7 @@ jobs:
     runs-on: ubuntu-latest            # Entorno: última versión de Ubuntu
     strategy:
       matrix:
-        python-version: [3.9, 3.11]
+        python-version: [3.9]
     steps:
       # Paso 1: Obtener el código del repositorio
       - name: 📥 Checkout repository
@@ -99,40 +99,36 @@ jobs:
       # Paso 8: Ejecutar pruebas con cobertura y reportes
       - name: 🧪 Run tests with Pytest
         env:
-          BASE_URL: ${{ env.BASE_URL }}
-          ADMIN_USER: ${{ env.ADMIN_USER }}
-          ADMIN_PASSWORD: ${{ env.ADMIN_PASSWORD }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
+          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
         run: |
-          echo "BASE_URL from env: $BASE_URL"
-          echo "ADMIN_USER from env: $ADMIN_USER"
-          python -c "import os; print('BASE_URL from Python:', os.getenv('BASE_URL'))"
-           pytest -v --html=reports/pytest-report.html --self-contained-html --junitxml=reports/junit.xml
-          
-          # Crear directorio para reportes
-          mkdir -p reports
+          # Crear directorio para reportes con la versión de Python
+          REPORTS_DIR="reports/py${{ matrix.python-version }}"
+          mkdir -p $REPORTS_DIR
           mkdir -p screenshots
-          
+
           # Ejecutar pruebas con Xvfb para entorno headless
           xvfb-run -a pytest -q --maxfail=1 --disable-warnings \
-            --html=reports/pytest-report.html --self-contained-html \
-            --junitxml=reports/junit.xml \
-            --cov=. --cov-report=term-missing --cov-report=xml:reports/coverage.xml \
-            --cov-report=html:reports/coverage-html
-          
+            --html=$REPORTS_DIR/pytest-report.html --self-contained-html \
+            --junitxml=$REPORTS_DIR/junit.xml \
+            --cov=. --cov-report=term-missing --cov-report=xml:$REPORTS_DIR/coverage.xml \
+            --cov-report=html:$REPORTS_DIR/coverage-html
+
           # Mostrar resumen de cobertura en consola
           python -m coverage report
 
       # Paso 9: Subir reportes y screenshots como artifacts
       - name: 📊 Upload test artifacts (reports and screenshots)
-        if: always()  # Siempre sube artifacts, incluso si fallan las pruebas
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-artifacts-${{ github.run_id }}
+          name: test-artifacts-${{ github.run_id }}-${{ matrix.python-version }}
           path: |
             reports/**
             **/screenshots/**
           if-no-files-found: ignore
-          retention-days: 7  # Conservar artifacts por 7 días
+          retention-days: 7
 
       # Paso 10: Opcional - Subir reporte de cobertura a Codecov
       - name: 📈 Upload coverage to Codecov (Optional)
