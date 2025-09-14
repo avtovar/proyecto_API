@@ -58,7 +58,7 @@ jobs:
       # Paso 5: Borrar Cache
       - name: Clean caches
         run: |
-          rm -rf **/__pycache__ .pytest_cache
+          find . -type d -name "__pycache__" -exec rm -rf {} +
           find . -type f -name "*.pyc" -delete
 
       # Paso 6: Configurar archivo de entorno
