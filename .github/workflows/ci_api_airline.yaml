@@ -78,6 +78,13 @@ jobs:
           which google-chrome
           which Xvfb
 
+      # Paso 8: Set up environment variables
+      - name: 🔧 Set up environment variables
+        run: |
+          echo "BASE_URL=https://cf-automation-airline-api.onrender.com" >> $GITHUB_ENV
+          echo "ADMIN_USER=admin@demo.com" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=admin123" >> $GITHUB_ENV
+
       # Paso 8: Ejecutar pruebas con cobertura y reportes
       - name: 🧪 Run tests with Pytest
         env:
@@ -85,6 +92,10 @@ jobs:
           SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
           SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
         run: |
+          echo "BASE_URL: $BASE_URL"
+          echo "ADMIN_USER: $ADMIN_USER"
+          pytest -v --html=reports/pytest-report.html --self-contained-html --junitxml=reports/junit.xml
+          
           # Crear directorio para reportes
           mkdir -p reports
           mkdir -p screenshots
