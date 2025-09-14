@@ -21,7 +21,9 @@ concurrency:
 jobs:
   test:
     runs-on: ubuntu-latest            # Entorno: última versión de Ubuntu
-
+    strategy:
+      matrix:
+        python-version: [3.9, 3.10, 3.11]
     steps:
       # Paso 1: Obtener el código del repositorio
       - name: 📥 Checkout repository
@@ -31,7 +33,7 @@ jobs:
       - name: 🐍 Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"      # Versión específica de Python
+          python-version: ${{ matrix.python-version }}     # Versión específica de Python
 
       # Paso 3: Cache de dependencias para builds más rápidos
       - name: ♻️ Cache pip
@@ -88,13 +90,14 @@ jobs:
       # Paso 8: Ejecutar pruebas con cobertura y reportes
       - name: 🧪 Run tests with Pytest
         env:
-          BASE_URL: ${{ secrets.BASE_URL }}
-          SAUCE_USERNAME: ${{ secrets.SAUCE_USERNAME }}
-          SAUCE_ACCESS_KEY: ${{ secrets.SAUCE_ACCESS_KEY }}
+          BASE_URL: ${{ env.BASE_URL }}
+          ADMIN_USER: ${{ env.ADMIN_USER }}
+          ADMIN_PASSWORD: ${{ env.ADMIN_PASSWORD }}
         run: |
-          echo "BASE_URL: $BASE_URL"
-          echo "ADMIN_USER: $ADMIN_USER"
-          pytest -v --html=reports/pytest-report.html --self-contained-html --junitxml=reports/junit.xml
+          echo "BASE_URL from env: $BASE_URL"
+          echo "ADMIN_USER from env: $ADMIN_USER"
+          python -c "import os; print('BASE_URL from Python:', os.getenv('BASE_URL'))"
+           pytest -v --html=reports/pytest-report.html --self-contained-html --junitxml=reports/junit.xml
           
           # Crear directorio para reportes
           mkdir -p reports

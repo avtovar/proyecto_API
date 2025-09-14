@@ -1,0 +1,31 @@
+# Environments
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Testing
+reports/
+.coverage
+htmlcov/
+
+# Logs
+*.log
+
+# Environment variables
+.env

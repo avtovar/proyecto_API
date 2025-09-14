@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# URL base de la API
-BASE_URL = os.getenv("BASE_URL", "https://cf-automation-airline-api.onrender.com")
+# Obtener BASE_URL de variables de entorno, con manejo de cadenas vacías
+BASE_URL = os.getenv("BASE_URL") or "https://cf-automation-airline-api.onrender.com"
 AUTH_LOGIN = "/auth/login/"
 AIRPORT = "/airports/"
 fake = faker.Faker()
@@ -27,8 +27,11 @@ def admin_token() -> str:
     user = os.getenv("ADMIN_USER", "admin@demo.com")
     pwd = os.getenv("ADMIN_PASS", "admin123")
 
+    url = BASE_URL + AUTH_LOGIN
+    print(f"Attempting to login to: {url}")  # Debug
+
     r = requests.post(
-        BASE_URL + AUTH_LOGIN,
+        url,
         data={
             "grant_type": "",
             "username": user,
