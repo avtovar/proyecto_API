@@ -86,6 +86,15 @@ jobs:
           echo "BASE_URL=https://cf-automation-airline-api.onrender.com" >> $GITHUB_ENV
           echo "ADMIN_USER=admin@demo.com" >> $GITHUB_ENV
           echo "ADMIN_PASSWORD=admin123" >> $GITHUB_ENV
+          
+      - name: 🌐 Check API availability
+        run: |
+          echo "Verificando disponibilidad de la API..."
+          if curl --max-time 10 -s -o /dev/null -w "%{http_code}" https://cf-automation-airline-api.onrender.com/docs | grep -q "200"; then
+          echo "✅ API está disponible"
+            else
+              echo "❌ API no está disponible"
+            fi
 
       # Paso 8: Ejecutar pruebas con cobertura y reportes
       - name: 🧪 Run tests with Pytest
