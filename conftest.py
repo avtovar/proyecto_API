@@ -8,10 +8,9 @@ from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-# Cargar variables de entorno
 load_dotenv()
 
-# Obtener variables de entorno con valores por defecto
+# URL base de la API
 BASE_URL = os.getenv("BASE_URL", "https://cf-automation-airline-api.onrender.com")
 AUTH_LOGIN = "/auth/login/"
 AIRPORT = "/airports/"
@@ -23,28 +22,25 @@ MAX_RETRIES = 3
 BACKOFF_FACTOR = 0.5
 
 
+@pytest.fixture(scope="session")
+def session_with_retries():
+    """Fixture para crear una sesión con reintentos"""
+    session = requests.Session()
+    retry_strategy = Retry(
+        total=MAX_RETRIES,
+        backoff_factor=BACKOFF_FACTOR,
+        status_forcelist=[429, 500, 502, 503, 504],
+    )
+    adapter = HTTPAdapter(max_retries=retry_strategy)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
+    return session
+
 
 @pytest.fixture(scope="session")
 def base_url():
     """Fixture que retorna la URL base de la API"""
     return BASE_URL
-
-
-@pytest.fixture(scope="session")
-def check_api_availability():
-    """Fixture para verificar que la API está disponible"""
-    import os
-    base_url = os.getenv("BASE_URL")
-    if not base_url:
-        pytest.fail("BASE_URL no está configurada")
-
-    # Intentar una conexión simple a la API
-    try:
-        response = requests.get(base_url, timeout=5)
-        if response.status_code != 200:
-            pytest.skip(f"API no disponible (status: {response.status_code})")
-    except requests.exceptions.RequestException as e:
-        pytest.skip(f"API no disponible: {str(e)}")
 
 
 @pytest.fixture(scope="session")
@@ -121,3 +117,28 @@ def airport(auth_headers, session_with_retries):
             pass
     except requests.exceptions.RequestException as e:
         pytest.skip(f"API no disponible: {str(e)}")
+
+
+# Fixture para test_users.py
+@pytest.fixture
+def test_user(base_url, auth_headers, session_with_retries):
+    """Fixture para crear un usuario de prueba"""
+    user_data = {
+        "email": "test.user@example.com",
+        "password": "Test12345",
+        "full_name": "Test User",
+        "role": "passenger"
+    }
+
+    response = session_with_retries.post(
+        f"{base_url}/users/",
+        json=user_data,
+        headers=auth_headers
+    )
+    response.raise_for_status()
+
+    yield response.json()
+
+    # Cleanup: eliminar usuario después de la prueba
+    user_id = response.json()["id"]
+    session_with_retries.delete(f"{base_url}/users/{user_id}", headers=auth_headers)
