@@ -20,10 +20,10 @@ user_schema = {
 def test_user(base_url, auth_headers):
     """Fixture para crear un usuario de prueba"""
     user_data = {
-        "email": "test.user@example.com",
-        "password": "Test12345",
-        "full_name": "Test User",
-        "role": "passenger"
+        "email": "alondra.tovar@airline.com",
+        "password": "Alon12345",
+        "full_name": "Alondra Tovar",
+        "role": "admin"
     }
 
     response = requests.post(
