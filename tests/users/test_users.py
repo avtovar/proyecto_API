@@ -1,4 +1,4 @@
-import pytest
+import random
 from jsonschema import validate
 
 # Esquema esperado para un usuario
@@ -54,24 +54,35 @@ def test_get_all_users(base_url, auth_headers, session_with_retries):
 
 def test_delete_user_alondra(base_url, auth_headers, session_with_retries):
     """
-    Busca y elimina al usuario cuyo full_name sea 'Alondra Tovar'.
+    Crea o busca a 'Alondra Tovar' y luego lo elimina.
     """
-    # Buscar usuarios
+    # Buscar si ya existe
     r = session_with_retries.get(f"{base_url}/users/", headers=auth_headers, timeout=5)
     r.raise_for_status()
     users = r.json()
-
-    # Buscar el usuario con nombre "Alondra Tovar"
     alondra = next((u for u in users if u.get("full_name") == "Alondra Tovar"), None)
 
-    assert alondra is not None, "No se encontró un usuario con full_name='Alondra Tovar'"
+    if not alondra:
+        user_data = {
+            "email": f"alondra.{random.randint(1000,9999)}@airline.com",
+            "password": "Alon12345",
+            "full_name": "Alondra Tovar",
+            "role": "admin"
+        }
+        create_resp = session_with_retries.post(
+            f"{base_url}/users/",
+            json=user_data,
+            headers=auth_headers,
+            timeout=5
+        )
+        create_resp.raise_for_status()
+        alondra = create_resp.json()
 
+    # Eliminar usuario encontrado o recién creado
     user_id = alondra["id"]
     delete_response = session_with_retries.delete(
         f"{base_url}/users/{user_id}",
         headers=auth_headers,
         timeout=5
     )
-
-    # Validar que se eliminó correctamente
     assert delete_response.status_code in [200, 204], f"Error al eliminar usuario: {delete_response.text}"

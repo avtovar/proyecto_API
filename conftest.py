@@ -91,7 +91,7 @@ def airport(auth_headers, session_with_retries):
     airport_data = {
         "iata_code": "".join(random.choices(string.ascii_uppercase, k=3)),
         "city": "La Paz",
-        "country": fake.country_code()
+        "country": fake.country()  # Antes usaba fake.country_code()
     }
 
     try:
@@ -115,14 +115,14 @@ def airport(auth_headers, session_with_retries):
                 timeout=REQUEST_TIMEOUT
             )
         except requests.exceptions.RequestException:
-            pass  # si falla el cleanup, continuar
+            pass
 
 
 @pytest.fixture
 def test_user(base_url, auth_headers, session_with_retries):
     """Crea un usuario de prueba y lo elimina al finalizar."""
     user_data = {
-        "email": "test.user@example.com",
+        "email": f"test.{random.randint(1000,9999)}@example.com",
         "password": "Test12345",
         "full_name": "Test User",
         "role": "passenger"
@@ -148,118 +148,3 @@ def test_user(base_url, auth_headers, session_with_retries):
         )
     except requests.exceptions.RequestException:
         pass
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-import requests
-import pytest
-from jsonschema import validate
-
-# Esquema esperado para un usuario
-user_schema = {
-    "type": "object",
-    "required": ["id", "email", "full_name", "role"],
-    "properties": {
-        "id": {"type": "string"},
-        "email": {"type": "string", "format": "email"},
-        "full_name": {"type": "string"},
-        "role": {"type": "string", "enum": ["passenger", "admin"]}
-    },
-    "additionalProperties": False
-}
-
-
-@pytest.fixture
-def test_user(base_url, auth_headers):
-    """Fixture para crear un usuario de prueba"""
-    user_data = {
-        "email": "alondra.tovar@airline.com",
-        "password": "Alon12345",
-        "full_name": "Alondra Tovar",
-        "role": "admin"
-    }
-
-    response = requests.post(
-        f"{base_url}/users/",
-        json=user_data,
-        headers=auth_headers
-    )
-    response.raise_for_status()
-
-    yield response.json()
-
-    # Cleanup: eliminar usuario después de la prueba
-    user_id = response.json()["id"]
-    requests.delete(f"{base_url}/users/{user_id}", headers=auth_headers)
-
-
-def test_create_user_schema(test_user):
-    """Valida que el usuario creado cumpla con el esquema JSON esperado."""
-    validate(instance=test_user, schema=user_schema)
-
-
-def test_get_all_users(base_url, auth_headers):
-    """
-    Obtiene todos los usuarios de la API en bloques (paginación).
-    Verifica que devuelve una lista de usuarios con id y email válidos.
-    """
-    limit = 10
-    skip = 0
-    results = []
-
-    while True:
-        r = requests.get(
-            f"{base_url}/users/",
-            headers=auth_headers,
-            params={"skip": skip, "limit": limit},
-            timeout=5
-        )
-        r.raise_for_status()
-        users_list = r.json()
-
-        if not users_list:
-            break
-
-        results.extend(users_list)
-        skip += limit
-
-    # Validaciones
-    assert isinstance(results, list)
-    if results:
-        assert "id" in results[0]
-        assert "email" in results[0]
-
-
-def test_delete_user_alondra(base_url, auth_headers):
-    """
-    Busca y elimina al usuario cuyo full_name sea 'Alondra Tovar'.
-    """
-    # Buscar usuarios
-    r = requests.get(f"{base_url}/users/", headers=auth_headers)
-    r.raise_for_status()
-    users = r.json()
-
-    # Buscar el usuario con nombre "Alondra Tovar"
-    alondra = next((u for u in users if u.get("full_name") == "Alondra Tovar"), None)
-
-    assert alondra is not None, "No se encontró un usuario con full_name='Alondra Tovar'"
-
-    user_id = alondra["id"]
-    delete_response = requests.delete(f"{base_url}/users/{user_id}", headers=auth_headers)
-
-    # Validar que se eliminó correctamente
-    assert delete_response.status_code in [200, 204], f"Error al eliminar usuario: {delete_response.text}"
-
-
