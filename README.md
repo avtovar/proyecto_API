@@ -58,3 +58,14 @@ La API proporciona endpoints para gestionar vuelos, reservaciones y operaciones 
 ## Ejecución de Pruebas
 - Ejecutar todas las pruebas: `pytest -v`
 - Ejecutar con reporte HTML: `pytest --html=report.html`
+
+## Pruebas en Jira 
+  https://ali-valentin-tovar-morales.atlassian.net/jira/software/projects/ADAA/list
+  - Endpoint: Auth
+  - Endpoint: Login
+  - Endpoint: Airlines
+  - Endpoint: Flights
+  - Endpoint: Bookings
+
+## Confluence 
+  https://ali-valentin-tovar-morales.atlassian.net/wiki/spaces/api/pages/119570436/Resumen+de+Automatizaci+n+API+para+Aerol+nea
