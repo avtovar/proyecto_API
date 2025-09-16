@@ -26,6 +26,7 @@ def test_user(base_url, auth_headers):
         "role": "admin"
     }
 
+
     response = requests.post(
         f"{base_url}/users/",
         json=user_data,

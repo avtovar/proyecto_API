@@ -96,3 +96,5 @@ def test_delete_user_alondra(base_url, auth_headers):
 
     # Validar que se eliminó correctamente
     assert delete_response.status_code in [200, 204], f"Error al eliminar usuario: {delete_response.text}"
+
+
