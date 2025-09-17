@@ -42,6 +42,7 @@ jobs:
           find . -name "*.pyc" -delete
           rm -rf .pytest_cache
 
+
       - name: 🧪 Run tests with Pytest
         env:
           BASE_URL: https://cf-automation-airline-api.onrender.com
