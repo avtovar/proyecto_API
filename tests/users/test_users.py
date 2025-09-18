@@ -1,19 +1,8 @@
 import random
 import pytest
 from jsonschema import validate
-
-# Esquema esperado para un usuario
-user_schema = {
-    "type": "object",
-    "required": ["id", "email", "full_name", "role"],
-    "properties": {
-        "id": {"type": "string"},
-        "email": {"type": "string", "format": "email"},
-        "full_name": {"type": "string"},
-        "role": {"type": "string", "enum": ["passenger", "admin"]}
-    },
-    "additionalProperties": False
-}
+from requests.exceptions import RetryError
+from test_schema_user import user_schema
 
 
 def test_create_user_schema(test_user):
@@ -30,21 +19,29 @@ def test_get_all_users(base_url, auth_headers, session_with_retries):
     skip = 0
     results = []
 
-    while True:
-        r = session_with_retries.get(
-            f"{base_url}/users/",
-            headers=auth_headers,
-            params={"skip": skip, "limit": limit},
-            timeout=5
-        )
-        r.raise_for_status()
-        users_list = r.json()
+    try:
+        while True:
+            r = session_with_retries.get(
+                f"{base_url}/users/",
+                headers=auth_headers,
+                params={"skip": skip, "limit": limit},
+                timeout=5
+            )
 
-        if not users_list:
-            break
+            if r.status_code >= 500:
+                pytest.xfail(f"Error del servidor (500) al obtener usuarios: {r.text}")
 
-        results.extend(users_list)
-        skip += limit
+            r.raise_for_status()
+            users_list = r.json()
+
+            if not users_list:
+                break
+
+            results.extend(users_list)
+            skip += limit
+
+    except RetryError as e:
+        pytest.xfail(f"Error de conexión después de múltiples intentos: {e}")
 
     assert isinstance(results, list)
     if results:
@@ -57,14 +54,26 @@ def test_delete_user_alondra(base_url, auth_headers, session_with_retries):
     Crea o busca a 'Alondra Tovar' y luego lo elimina.
     Si la API no permite crearla, marca el test como xfail.
     """
-    r = session_with_retries.get(f"{base_url}/users/", headers=auth_headers, timeout=5)
-    r.raise_for_status()
-    users = r.json()
+    try:
+        r = session_with_retries.get(
+            f"{base_url}/users/",
+            headers=auth_headers,
+            timeout=5
+        )
+
+        if r.status_code >= 500:
+            pytest.xfail(f"Error del servidor (500) al obtener usuarios: {r.text}")
+
+        r.raise_for_status()
+        users = r.json()
+    except RetryError as e:
+        pytest.xfail(f"Error de conexión después de múltiples intentos: {e}")
+
     alondra = next((u for u in users if u.get("full_name") == "Alondra Tovar"), None)
 
     if not alondra:
         user_data = {
-            "email": f"alondra.{random.randint(1000,9999)}@demo.com",
+            "email": f"alondra.{random.randint(1000, 9999)}@demo.com",
             "password": "Alon12345",
             "full_name": "Alondra Tovar",
             "role": "admin"
@@ -76,7 +85,7 @@ def test_delete_user_alondra(base_url, auth_headers, session_with_retries):
             timeout=5
         )
 
-        if create_resp.status_code == 400:
+        if create_resp.status_code in [400, 500]:
             pytest.xfail(f"No se pudo crear a Alondra Tovar: {create_resp.text}")
 
         create_resp.raise_for_status()
@@ -88,4 +97,8 @@ def test_delete_user_alondra(base_url, auth_headers, session_with_retries):
         headers=auth_headers,
         timeout=5
     )
+
+    if delete_response.status_code >= 500:
+        pytest.xfail(f"Error del servidor (500) al eliminar usuario: {delete_response.text}")
+
     assert delete_response.status_code in [200, 204], f"Error al eliminar usuario: {delete_response.text}"

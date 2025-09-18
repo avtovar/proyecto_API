@@ -3,7 +3,6 @@ from jsonschema import validate
 from test_schema_airports import airport_schema
 import random
 import string
-import uuid
 
 
 def unique_iata():
@@ -13,23 +12,35 @@ def unique_iata():
 
 def test_create_airport_success(base_url, auth_headers, session_with_retries):
     """Crear un nuevo aeropuerto exitosamente"""
-    data = {
-        "iata_code": unique_iata(),
-        "city": "New York",
-        "country": "USA"
-    }
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        data = {
+            "iata_code": unique_iata(),
+            "city": "New York",
+            "country": "USA"
+        }
 
-    response = session_with_retries.post(
-        f"{base_url}/airports",
-        json=data,
-        headers=auth_headers,
-        timeout=10
-    )
+        response = session_with_retries.post(
+            f"{base_url}/airports",
+            json=data,
+            headers=auth_headers,
+            timeout=10
+        )
 
-    assert response.status_code in [201, 200], f"Expected 201/200, got {response.status_code}"
-    airport = response.json()
-    assert "iata_code" in airport, f"Respuesta inválida: {airport}"
-    validate(instance=airport, schema=airport_schema)
+        if response.status_code in [201, 200]:
+            airport = response.json()
+            assert "iata_code" in airport, f"Respuesta inválida: {airport}"
+            validate(instance=airport, schema=airport_schema)
+            return
+        else:
+            error_data = response.json()
+            if 'detail' in error_data and 'exists' in error_data['detail']:
+                continue
+            else:
+                pytest.fail(f"Error inesperado al crear aeropuerto: {response.text}")
+    else:
+        pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
+
 
 
 def test_create_airport_invalid_data(base_url, auth_headers, session_with_retries):
