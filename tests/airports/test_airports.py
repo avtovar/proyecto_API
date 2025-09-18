@@ -8,9 +8,7 @@ import uuid
 
 def unique_iata():
     """Genera un código IATA válido y único (3 letras mayúsculas)."""
-    # Usamos UUID y nos quedamos con letras
-    letters = ''.join(c for c in str(uuid.uuid4()).upper() if c.isalpha())
-    return letters[:3]
+    return ''.join(random.choices(string.ascii_uppercase, k=3))
 
 
 def test_create_airport_success(base_url, auth_headers, session_with_retries):
@@ -81,15 +79,28 @@ def test_get_airport_by_code(base_url, auth_headers, session_with_retries):
 
 def test_update_airport(base_url, auth_headers, session_with_retries):
     """Actualizar un aeropuerto existente"""
-    code = unique_iata()
-    data = {"iata_code": code, "city": "Old City", "country": "USA"}
-    create_resp = session_with_retries.post(
-        f"{base_url}/airports",
-        json=data,
-        headers=auth_headers,
-        timeout=10
-    )
-    airport = create_resp.json()
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        code = unique_iata()
+        data = {"iata_code": code, "city": "Old City", "country": "USA"}
+        create_resp = session_with_retries.post(
+            f"{base_url}/airports",
+            json=data,
+            headers=auth_headers,
+            timeout=10
+        )
+        if create_resp.status_code == 201:
+            airport = create_resp.json()
+            break
+        else:
+            error_data = create_resp.json()
+            if 'detail' in error_data and 'exists' in error_data['detail']:
+                continue
+            else:
+                pytest.fail(f"Error inesperado al crear aeropuerto: {create_resp.text}")
+    else:
+        pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
+
     assert "iata_code" in airport, f"Respuesta inválida: {airport}"
 
     update_data = {"iata_code": code, "city": "Updated City", "country": "USA"}
@@ -107,15 +118,28 @@ def test_update_airport(base_url, auth_headers, session_with_retries):
 
 def test_delete_airport(base_url, auth_headers, session_with_retries):
     """Eliminar un aeropuerto"""
-    code = unique_iata()
-    data = {"iata_code": code, "city": "Temp City", "country": "Spain"}
-    create_resp = session_with_retries.post(
-        f"{base_url}/airports",
-        json=data,
-        headers=auth_headers,
-        timeout=10
-    )
-    airport = create_resp.json()
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        code = unique_iata()
+        data = {"iata_code": code, "city": "Temp City", "country": "Spain"}
+        create_resp = session_with_retries.post(
+            f"{base_url}/airports",
+            json=data,
+            headers=auth_headers,
+            timeout=10
+        )
+        if create_resp.status_code == 201:
+            airport = create_resp.json()
+            break
+        else:
+            error_data = create_resp.json()
+            if 'detail' in error_data and 'exists' in error_data['detail']:
+                continue
+            else:
+                pytest.fail(f"Error inesperado al crear aeropuerto: {create_resp.text}")
+    else:
+        pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
+
     assert "iata_code" in airport, f"Respuesta inválida: {airport}"
 
     response = session_with_retries.delete(
@@ -132,4 +156,3 @@ def test_delete_airport(base_url, auth_headers, session_with_retries):
         timeout=10
     )
     assert get_resp.status_code == 404
-
