@@ -1,6 +1,6 @@
 import pytest
 from jsonschema import validate
-from test_schema_airports import airport_schema
+from .test_schema_airports import airport_schema  # Importación relativa
 import random
 import string
 
@@ -40,8 +40,6 @@ def test_create_airport_success(base_url, auth_headers, session_with_retries):
                 pytest.fail(f"Error inesperado al crear aeropuerto: {response.text}")
     else:
         pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
-
-
 
 def test_create_airport_invalid_data(base_url, auth_headers, session_with_retries):
     """Intentar crear aeropuerto con datos inválidos"""

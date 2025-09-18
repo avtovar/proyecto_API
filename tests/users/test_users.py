@@ -13,7 +13,7 @@ def test_create_user_schema(test_user):
 def test_get_all_users(base_url, auth_headers, session_with_retries):
     """
     Obtiene todos los usuarios de la API en bloques (paginación).
-    Verifica que devuelve una lista de usuarios con id y email válidos.
+    Verifica que devuelve una lista de usuarios con id and email válidos.
     """
     limit = 10
     skip = 0
@@ -101,4 +101,5 @@ def test_delete_user_alondra(base_url, auth_headers, session_with_retries):
     if delete_response.status_code >= 500:
         pytest.xfail(f"Error del servidor (500) al eliminar usuario: {delete_response.text}")
 
+    assert delete_response.status_code in [200, 204], f"Error al eliminar usuario: {delete_response.text}"
     assert delete_response.status_code in [200, 204], f"Error al eliminar usuario: {delete_response.text}"
