@@ -1,4 +1,4 @@
-# test_schema_user.py
+# Esquema esperado para un usuario
 user_schema = {
     "type": "object",
     "required": ["id", "email", "full_name", "role"],

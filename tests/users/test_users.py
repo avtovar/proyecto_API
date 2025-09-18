@@ -2,7 +2,7 @@ import random
 import pytest
 from jsonschema import validate
 from requests.exceptions import RetryError
-from test_schema_user import user_schema
+from .test_schema_user import user_schema  # Importación relativa
 
 
 def test_create_user_schema(test_user):
