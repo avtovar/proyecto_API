@@ -3,11 +3,14 @@ from jsonschema import validate
 from test_schema_airports import airport_schema
 import random
 import string
+import uuid
 
 
 def unique_iata():
-    """Genera un código IATA válido de 3 letras mayúsculas."""
-    return "".join(random.choices(string.ascii_uppercase, k=3))
+    """Genera un código IATA válido y único (3 letras mayúsculas)."""
+    # Usamos UUID y nos quedamos con letras
+    letters = ''.join(c for c in str(uuid.uuid4()).upper() if c.isalpha())
+    return letters[:3]
 
 
 def test_create_airport_success(base_url, auth_headers, session_with_retries):
@@ -34,7 +37,7 @@ def test_create_airport_success(base_url, auth_headers, session_with_retries):
 def test_create_airport_invalid_data(base_url, auth_headers, session_with_retries):
     """Intentar crear aeropuerto con datos inválidos"""
     data = {
-        "iata_code": "123",  # inválido (no cumple regex)
+        "iata_code": "123",  # inválido (no cumple regex ^[A-Z]{3}$)
         "city": "",
         "country": "USA"
     }
@@ -46,7 +49,6 @@ def test_create_airport_invalid_data(base_url, auth_headers, session_with_retrie
         timeout=10
     )
 
-    # la API devuelve 422 en errores de validación
     assert response.status_code in [400, 422], f"Expected 400/422, got {response.status_code}"
     error = response.json()
     assert "error" in error or "message" in error or "detail" in error
@@ -90,7 +92,7 @@ def test_update_airport(base_url, auth_headers, session_with_retries):
     airport = create_resp.json()
     assert "iata_code" in airport, f"Respuesta inválida: {airport}"
 
-    update_data = {"city": "Updated City"}
+    update_data = {"iata_code": code, "city": "Updated City", "country": "USA"}
     response = session_with_retries.put(
         f"{base_url}/airports/{code}",
         json=update_data,
@@ -98,7 +100,7 @@ def test_update_airport(base_url, auth_headers, session_with_retries):
         timeout=10
     )
 
-    assert response.status_code in [200, 201]
+    assert response.status_code in [200, 201], f"Expected 200/201, got {response.status_code}"
     updated_airport = response.json()
     assert updated_airport["city"] == "Updated City"
 
@@ -130,5 +132,4 @@ def test_delete_airport(base_url, auth_headers, session_with_retries):
         timeout=10
     )
     assert get_resp.status_code == 404
-
 
