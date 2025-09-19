@@ -4,9 +4,16 @@ import string
 import requests
 import pytest
 import faker
+import sys
 from dotenv import load_dotenv
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+# Añadir el directorio raíz del proyecto al path de Python para importar api_client
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+# Importar el cliente API unificado
+from api_client import APIClient, LOGIN_SCHEMA, ERROR_SCHEMA, SUCCESS_SCHEMA
 
 # Cargar variables de entorno
 load_dotenv()
@@ -152,3 +159,44 @@ def test_user(base_url, auth_headers, session_with_retries):
         )
     except requests.exceptions.RequestException:
         pass
+
+
+@pytest.fixture
+def api_client():
+    """Fixture que proporciona una instancia del cliente API unificado."""
+    return APIClient(base_url=BASE_URL)
+
+
+@pytest.fixture
+def authenticated_api_client(api_client, admin_token):
+    """Fixture que proporciona una instancia del cliente API con autenticación."""
+    api_client.token = admin_token
+    return api_client
+
+
+# Fixtures para los esquemas de validación
+@pytest.fixture
+def login_schema():
+    """Fixture que proporciona el esquema de validación para login."""
+    return LOGIN_SCHEMA
+
+
+@pytest.fixture
+def error_schema():
+    """Fixture que proporciona el esquema de validación para errores."""
+    return ERROR_SCHEMA
+
+
+@pytest.fixture
+def success_schema():
+    """Fixture que proporciona el esquema de validación para respuestas exitosas."""
+    return SUCCESS_SCHEMA
+
+
+# Configuración de variables de entorno para tests
+def pytest_configure(config):
+    """Configuración inicial de pytest."""
+    # Establecer variables de entorno por defecto para tests
+    os.environ.setdefault("BASE_URL", "https://cf-automation-airline-api.onrender.com")
+    os.environ.setdefault("API_RETRIES", "3")
+    os.environ.setdefault("API_TIMEOUT", "5")
