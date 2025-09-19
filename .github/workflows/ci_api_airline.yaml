@@ -52,7 +52,7 @@ jobs:
           # Crear directorio específico para cada versión de Python
           REPORTS_DIR="reports/py${{ matrix.python-version }}"
           mkdir -p $REPORTS_DIR
-          mkdir -p screenshots
+          
           
           # Verificar variables de entorno
           echo "BASE_URL: $BASE_URL"
