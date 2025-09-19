@@ -1,6 +1,6 @@
 import pytest
 from jsonschema import validate
-from test_schema_airports import airport_schema
+from .test_schema_airports import airport_schema  # Importación relativa
 import random
 import string
 
