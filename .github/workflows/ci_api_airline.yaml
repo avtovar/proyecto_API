@@ -81,17 +81,15 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      # Opcional: Publicar reporte de cobertura en Codecov
-      # - name: 📈 Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v3
-      #   with:
-      #     file: reports/py${{ matrix.python-version }}/coverage.xml
-      #     flags: unittests
-      #     name: codecov-umbrella
+      - name: 📈 Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+           file: reports/py${{ matrix.python-version }}/coverage.xml
+           flags: unittests
+           name: codecov-umbrella
 
-      # Opcional: Publicar reporte de pruebas (JUnit)
-      # - name: 📋 Publish Test Report
-      #   uses: mikepenz/action-junit-report@v3
-      #   if: always()
-      #   with:
-      #     report_paths: 'reports/py${{ matrix.python-version }}/junit.xml'
+      - name: 📋 Publish Test Report
+        uses: mikepenz/action-junit-report@v3
+        if: always()
+        with:
+           report_paths: 'reports/py${{ matrix.python-version }}/junit.xml'
