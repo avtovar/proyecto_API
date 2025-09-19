@@ -81,13 +81,6 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: 📈 Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-           file: reports/py${{ matrix.python-version }}/coverage.xml
-           flags: unittests
-           name: codecov-umbrella
-
       - name: 📋 Publish Test Report
         uses: mikepenz/action-junit-report@v3
         if: always()
