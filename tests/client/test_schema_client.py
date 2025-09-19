@@ -1,5 +1,12 @@
 # Esquema de validación para respuestas del cliente API
 
+# Usando la función global
+resp = api_request("POST", "/auth/login", validate_schema=LOGIN_SCHEMA, data={...})
+
+# Usando la clase
+client = APIClient()
+client.login("user", "pass")  # Valida automáticamente con LOGIN_SCHEMA
+
 # Esquema para respuesta de login exitoso
 login_schema = {
     "type": "object",
@@ -32,3 +39,4 @@ success_schema = {
     },
     "additionalProperties": True
 }
+
