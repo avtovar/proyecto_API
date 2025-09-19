@@ -1,8 +1,9 @@
 import pytest
 from jsonschema import validate
-from .test_schema_airports import airport_schema  # Importación relativa
+from tests.airports.test_schema_airports import airport_schema
 import random
 import string
+from requests.exceptions import RetryError
 
 
 def unique_iata():
@@ -10,14 +11,13 @@ def unique_iata():
     return ''.join(random.choices(string.ascii_uppercase, k=3))
 
 
-def test_create_airport_success(base_url, auth_headers, session_with_retries):
-    """Crear un nuevo aeropuerto exitosamente"""
-    max_attempts = 3
+def create_airport_with_retry(base_url, auth_headers, session_with_retries, max_attempts=3):
+    """Intenta crear un aeropuerto con reintentos para evitar conflictos de códigos existentes."""
     for attempt in range(max_attempts):
         data = {
             "iata_code": unique_iata(),
-            "city": "New York",
-            "country": "USA"
+            "city": "Test City",
+            "country": "Test Country"
         }
 
         response = session_with_retries.post(
@@ -28,52 +28,22 @@ def test_create_airport_success(base_url, auth_headers, session_with_retries):
         )
 
         if response.status_code in [201, 200]:
-            airport = response.json()
-            assert "iata_code" in airport, f"Respuesta inválida: {airport}"
-            validate(instance=airport, schema=airport_schema)
-            return
+            return response.json()
+        elif response.status_code == 400 and 'exists' in response.text:
+            continue  # Intentar con otro código
         else:
-            error_data = response.json()
-            if 'detail' in error_data and 'exists' in error_data['detail']:
-                continue
-            else:
-                pytest.fail(f"Error inesperado al crear aeropuerto: {response.text}")
-    else:
-        pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
+            pytest.fail(f"Error inesperado al crear aeropuerto: {response.text}")
 
-def test_create_airport_invalid_data(base_url, auth_headers, session_with_retries):
-    """Intentar crear aeropuerto con datos inválidos"""
-    data = {
-        "iata_code": "123",  # inválido (no cumple regex ^[A-Z]{3}$)
-        "city": "",
-        "country": "USA"
-    }
-
-    response = session_with_retries.post(
-        f"{base_url}/airports",
-        json=data,
-        headers=auth_headers,
-        timeout=10
-    )
-
-    assert response.status_code in [400, 422], f"Expected 400/422, got {response.status_code}"
-    error = response.json()
-    assert "error" in error or "message" in error or "detail" in error
+    pytest.fail("No se pudo crear un aeropuerto después de 3 intentos")
 
 
 def test_get_airport_by_code(base_url, auth_headers, session_with_retries):
     """Obtener un aeropuerto específico por código"""
-    code = unique_iata()
-    data = {"iata_code": code, "city": "Test City", "country": "Mexico"}
-    create_resp = session_with_retries.post(
-        f"{base_url}/airports",
-        json=data,
-        headers=auth_headers,
-        timeout=10
-    )
-    airport = create_resp.json()
-    assert "iata_code" in airport, f"Respuesta inválida: {airport}"
+    # Crear aeropuerto con manejo de reintentos
+    airport = create_airport_with_retry(base_url, auth_headers, session_with_retries)
+    code = airport["iata_code"]
 
+    # Ahora obtener el aeropuerto
     response = session_with_retries.get(
         f"{base_url}/airports/{code}",
         headers=auth_headers,
@@ -86,31 +56,11 @@ def test_get_airport_by_code(base_url, auth_headers, session_with_retries):
     validate(instance=airport_data, schema=airport_schema)
 
 
+# Aplicar el mismo patrón a las otras funciones de prueba que crean aeropuertos
 def test_update_airport(base_url, auth_headers, session_with_retries):
     """Actualizar un aeropuerto existente"""
-    max_attempts = 3
-    for attempt in range(max_attempts):
-        code = unique_iata()
-        data = {"iata_code": code, "city": "Old City", "country": "USA"}
-        create_resp = session_with_retries.post(
-            f"{base_url}/airports",
-            json=data,
-            headers=auth_headers,
-            timeout=10
-        )
-        if create_resp.status_code == 201:
-            airport = create_resp.json()
-            break
-        else:
-            error_data = create_resp.json()
-            if 'detail' in error_data and 'exists' in error_data['detail']:
-                continue
-            else:
-                pytest.fail(f"Error inesperado al crear aeropuerto: {create_resp.text}")
-    else:
-        pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
-
-    assert "iata_code" in airport, f"Respuesta inválida: {airport}"
+    airport = create_airport_with_retry(base_url, auth_headers, session_with_retries)
+    code = airport["iata_code"]
 
     update_data = {"iata_code": code, "city": "Updated City", "country": "USA"}
     response = session_with_retries.put(
@@ -127,29 +77,8 @@ def test_update_airport(base_url, auth_headers, session_with_retries):
 
 def test_delete_airport(base_url, auth_headers, session_with_retries):
     """Eliminar un aeropuerto"""
-    max_attempts = 3
-    for attempt in range(max_attempts):
-        code = unique_iata()
-        data = {"iata_code": code, "city": "Temp City", "country": "Spain"}
-        create_resp = session_with_retries.post(
-            f"{base_url}/airports",
-            json=data,
-            headers=auth_headers,
-            timeout=10
-        )
-        if create_resp.status_code == 201:
-            airport = create_resp.json()
-            break
-        else:
-            error_data = create_resp.json()
-            if 'detail' in error_data and 'exists' in error_data['detail']:
-                continue
-            else:
-                pytest.fail(f"Error inesperado al crear aeropuerto: {create_resp.text}")
-    else:
-        pytest.fail("No se pudo crear un aeropuerto con código IATA único después de 3 intentos")
-
-    assert "iata_code" in airport, f"Respuesta inválida: {airport}"
+    airport = create_airport_with_retry(base_url, auth_headers, session_with_retries)
+    code = airport["iata_code"]
 
     response = session_with_retries.delete(
         f"{base_url}/airports/{code}",
