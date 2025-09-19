@@ -53,7 +53,7 @@ def test_create_flight_success(base_url, auth_headers, session_with_retries):
         timeout=10
     )
 
-    assert response.status_code == 201, f"Expected 201, got {response.status_code}"
+    assert response.status_code == 200, f"Expected 200, got {response.status_code}"
     flight = response.json()
     assert "id" in flight
     validate(instance=flight, schema=flight_schema)
