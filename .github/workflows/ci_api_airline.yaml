@@ -35,6 +35,8 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+          # Instalar dependencias para reportes (pytest-html, pytest-cov, etc.)
+          pip install pytest-html pytest-cov
 
       - name: 🧹 Clean Python cache
         run: |
@@ -42,40 +44,54 @@ jobs:
           find . -name "*.pyc" -delete
           rm -rf .pytest_cache
 
-      - name: 🧪 Run tests with Pytest
+      - name: 🔍 Verify environment variables
         env:
-          BASE_URL: https://cf-automation-airline-api.onrender.com
-          ADMIN_USER: admin@demo.com
-          ADMIN_PASSWORD: admin123
+          BASE_URL: ${{ secrets.BASE_URL || 'https://cf-automation-airline-api.onrender.com' }}
+          ADMIN_USER: ${{ secrets.ADMIN_USER || 'admin@demo.com' }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
         run: |
-          REPORTS_DIR="reports/py${{ matrix.python-version }}"
-          mkdir -p $REPORTS_DIR
           echo "BASE_URL: $BASE_URL"
           echo "ADMIN_USER: $ADMIN_USER"
+          # No imprimir la contraseña por seguridad
 
+      - name: 🧪 Run tests with Pytest
+        env:
+          BASE_URL: ${{ secrets.BASE_URL || 'https://cf-automation-airline-api.onrender.com' }}
+          ADMIN_USER: ${{ secrets.ADMIN_USER || 'admin@demo.com' }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
+        run: |
+          # Crear directorio específico para cada versión de Python
+          REPORTS_DIR="reports/py${{ matrix.python-version }}"
+          mkdir -p $REPORTS_DIR
+          
+          # Ejecutar pruebas
           xvfb-run -a pytest -v \
             --html=$REPORTS_DIR/pytest-report.html \
             --junitxml=$REPORTS_DIR/junit.xml \
-            --cov=. --cov-report=term-missing \
-            --cov-report=xml:$REPORTS_DIR/coverage.xml \
+            --cov=. --cov-report=xml:$REPORTS_DIR/coverage.xml \
             --cov-report=html:$REPORTS_DIR/coverage-html
-
-      - name: 📋 Annotate pytest failures
-        if: failure()
-        uses: pytest-dev/pytest-github-actions-annotate-failures@v1
 
       - name: 📊 Upload test artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts-${{ github.run_id }}-${{ matrix.python-version }}
-          path: reports/py${{ matrix.python-version }}/**
+          path: |
+            reports/py${{ matrix.python-version }}/**
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: 📝 Test summary
-        if: always()
-        run: |
-          echo "## ✅ Pytest Results (Python ${{ matrix.python-version }})" >> $GITHUB_STEP_SUMMARY
-          echo "- 📄 Pytest HTML Report: reports/py${{ matrix.python-version }}/pytest-report.html" >> $GITHUB_STEP_SUMMARY
-          echo "- 📊 Coverage HTML Report: reports/py${{ matrix.python-version }}/coverage-html/index.html" >> $GITHUB_STEP_SUMMARY
+      # Opcional: Publicar reporte de cobertura en Codecov
+      # - name: 📈 Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v3
+      #   with:
+      #     file: reports/py${{ matrix.python-version }}/coverage.xml
+      #     flags: unittests
+      #     name: codecov-umbrella
+
+      # Opcional: Publicar reporte de pruebas (JUnit)
+      # - name: 📋 Publish Test Report
+      #   uses: mikepenz/action-junit-report@v3
+      #   if: always()
+      #   with:
+      #     report_paths: 'reports/py${{ matrix.python-version }}/junit.xml'
