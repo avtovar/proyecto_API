@@ -1,49 +1,79 @@
-name: CI - Airline API
-run-name: CI ${{ github.ref_name }}
+# -----------------------------------------------------------
+# Archivo: ci_api_airline.yaml
+# Descripción:
+#   Workflow de CI para la API de aerolíneas.
+#   Incluye instalación de dependencias, limpieza de caché,
+#   validación de variables de entorno, ejecución de tests
+#   con reportes HTML, cobertura y publicación de resultados.
+# -----------------------------------------------------------
 
+name: CI - Airline API   # Nombre visible del workflow
+run-name: CI ${{ github.ref_name }}   # Nombre de ejecución (incluye rama)
+
+# -----------------------------------------------------------
+# Disparadores del workflow
+# -----------------------------------------------------------
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "master" ]         # Se ejecuta en push a master
   pull_request:
-    branches: [ "master" ]
-  workflow_dispatch:
+    branches: [ "master" ]         # Se ejecuta en PR hacia master
+  workflow_dispatch:               # Permite ejecución manual
 
+# -----------------------------------------------------------
+# Permisos
+# -----------------------------------------------------------
 permissions:
-  contents: read
+  contents: read   # Solo necesita acceso de lectura al repo
 
+# -----------------------------------------------------------
+# Concurrency
+# Evita que se solapen ejecuciones de un mismo ref/rama.
+# Si arranca uno nuevo, cancela los anteriores en curso.
+# -----------------------------------------------------------
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# -----------------------------------------------------------
+# Job principal
+# -----------------------------------------------------------
 jobs:
   test-api:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # El job corre en una VM Ubuntu
+
     strategy:
       matrix:
-        python-version: ["3.9"]
+        python-version: ["3.9"]   # Define versión de Python a usar
 
     steps:
+      # Paso 1: Obtener el código del repo
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
 
+      # Paso 2: Configurar Python en la VM
       - name: 🐍 Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
 
+      # Paso 3: Instalar dependencias
       - name: 📦 Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # Instalar dependencias para reportes (pytest-html, pytest-cov, etc.)
+          # Instalar dependencias adicionales para reportes
           pip install pytest-html pytest-cov
 
+      # Paso 4: Limpiar caché de Python y pytest
       - name: 🧹 Clean Python cache
         run: |
           find . -name "__pycache__" -type d -exec rm -rf {} +
           find . -name "*.pyc" -delete
           rm -rf .pytest_cache
 
+      # Paso 5: Verificar variables de entorno
+      # Usa valores por defecto si no hay secretos configurados
       - name: 🔍 Verify environment variables
         env:
           BASE_URL: ${{ secrets.BASE_URL || 'https://cf-automation-airline-api.onrender.com' }}
@@ -52,37 +82,40 @@ jobs:
         run: |
           echo "BASE_URL: $BASE_URL"
           echo "ADMIN_USER: $ADMIN_USER"
-          # No imprimir la contraseña por seguridad
+          # La contraseña no se imprime por seguridad
 
+      # Paso 6: Ejecutar pruebas con Pytest + reportes
       - name: 🧪 Run tests with Pytest
         env:
           BASE_URL: ${{ secrets.BASE_URL || 'https://cf-automation-airline-api.onrender.com' }}
           ADMIN_USER: ${{ secrets.ADMIN_USER || 'admin@demo.com' }}
           ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
         run: |
-          # Crear directorio específico para cada versión de Python
+          # Crear carpeta de reportes según la versión de Python
           REPORTS_DIR="reports/py${{ matrix.python-version }}"
           mkdir -p $REPORTS_DIR
           
-          # Ejecutar pruebas
+          # Ejecutar pruebas con pytest en entorno gráfico virtual (xvfb-run)
           xvfb-run -a pytest -v \
             --html=$REPORTS_DIR/pytest-report.html \
             --junitxml=$REPORTS_DIR/junit.xml \
             --cov=. --cov-report=xml:$REPORTS_DIR/coverage.xml \
             --cov-report=html:$REPORTS_DIR/coverage-html
 
+      # Paso 7: Subir artefactos de test (reportes, coverage, etc.)
       - name: 📊 Upload test artifacts
-        if: always()
+        if: always()   # Siempre sube los artefactos aunque falle el job
         uses: actions/upload-artifact@v4
         with:
           name: test-artifacts-${{ github.run_id }}-${{ matrix.python-version }}
           path: |
             reports/py${{ matrix.python-version }}/**
-          if-no-files-found: ignore
-          retention-days: 7
+          if-no-files-found: ignore   # Evita error si no hay archivos
+          retention-days: 7           # Los artefactos se guardan 7 días
 
+      # Paso 8: Publicar reporte JUnit en la UI de GitHub Actions
       - name: 📋 Publish Test Report
         uses: mikepenz/action-junit-report@v3
-        if: always()
+        if: always()   # Siempre publica, incluso si fallan tests
         with:
            report_paths: 'reports/py${{ matrix.python-version }}/junit.xml'
