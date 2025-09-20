@@ -2,52 +2,81 @@ import pytest
 import os
 import sys
 
-# Añadir el directorio raíz del proyecto al path de Python
+# ================================================================
+# Configuración de entorno para importar módulos del proyecto
+# ================================================================
+# Se añade el directorio raíz del proyecto al sys.path para que
+# Python pueda encontrar e importar los módulos correctamente.
+# Esto es útil cuando la estructura del proyecto tiene subdirectorios.
+# ================================================================
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
+# Importación del cliente API y esquemas de validación
 from api_client import APIClient, LOGIN_SCHEMA, ERROR_SCHEMA, SUCCESS_SCHEMA
 
 
+# ================================================================
+# Test: Validación de esquema de login
+# ================================================================
 def test_login_schema():
-    """Test que verifica que el login sigue el esquema correcto"""
+    """
+    Verifica que el login de la API devuelve un objeto con la estructura esperada:
+      - Debe contener un "access_token"
+      - El campo "token_type" debe ser "bearer"
+      - El "access_token" debe ser un string
+    """
     client = APIClient()
 
-    # Realizar login
+    # Ejecutar login con credenciales válidas
     response = client.login("admin@demo.com", "admin123")
 
-    # Verificar que la respuesta coincide con el esquema
+    # Validaciones del esquema de login
     assert "access_token" in response
     assert response["token_type"] == "bearer"
     assert isinstance(response["access_token"], str)
 
 
+# ================================================================
+# Test: Validación de esquema de error
+# ================================================================
 def test_error_schema():
-    """Test que verifica el esquema de error con credenciales inválidas"""
+    """
+    Verifica que, al intentar loguearse con credenciales inválidas:
+      - La API lance una excepción
+      - El mensaje de error contenga información útil
+    """
     client = APIClient()
 
-    # Intentar login con credenciales incorrectas
+    # Ejecutar login con credenciales incorrectas
     with pytest.raises(Exception) as exc_info:
         client.login("invalid@user.com", "wrongpassword")
 
-    # Verificar que el mensaje de error contiene información útil
+    # Validación del mensaje de error
     assert "Login failed" in str(exc_info.value)
 
 
+# ================================================================
+# Test: Validación de esquema de éxito en otras operaciones
+# ================================================================
 def test_success_schema():
-    """Test que verifica el esquema de éxito para otras operaciones"""
+    """
+    Verifica que, tras un login exitoso:
+      - Se pueda ejecutar otra operación (ejemplo: GET /flights)
+      - La respuesta tenga código HTTP 200
+      - Si es JSON, debe ser lista o diccionario
+    """
     client = APIClient()
 
-    # Primero hacer login para obtener token
+    # Hacer login para obtener un token válido
     client.login("admin@demo.com", "admin123")
 
-    # Ejemplo de otra operación (ajusta según tu API)
+    # Ejecutar operación de ejemplo: consultar vuelos
     response = client.api_request("GET", "/flights")
 
-    # Verificar que la respuesta es exitosa
+    # Validación del status code
     assert response.status_code == 200
 
-    # Si la respuesta es JSON, verificar su estructura
+    # Validación de la estructura de la respuesta si es JSON
     if response.headers.get("Content-Type") == "application/json":
         data = response.json()
-        # Aquí podrías añadir validaciones específicas para el esquema de vuelos
         assert isinstance(data, list) or isinstance(data, dict)

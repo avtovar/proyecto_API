@@ -1,21 +1,40 @@
+# -----------------------------------------------------------
+# Archivo: test_bookings.py
+# Descripción:
+#   Conjunto de pruebas automatizadas con pytest para validar
+#   la API de reservas (bookings). Se cubren casos de creación,
+#   consulta, cancelación y manejo de errores.
+# -----------------------------------------------------------
+
 import pytest
 from jsonschema import validate
-from tests.bookings.test_schema_bookings import booking_schema
+from tests.bookings.test_schema_bookings import booking_schema  # Esquema esperado de reservas
 from requests.exceptions import RetryError
 import random
 import string
 
 
-# Función auxiliar para generar IDs aleatorios
+# -----------------------------------------------------------
+# Función auxiliar: generar IDs aleatorios
+# -----------------------------------------------------------
 def random_id(length=8):
+    """Genera un identificador alfanumérico aleatorio de longitud configurable (default=8)."""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
 
-# 1. Crear una reserva exitosa
+# -----------------------------------------------------------
+# TEST 1: Crear una reserva exitosa
+# -----------------------------------------------------------
 def test_create_booking_success(base_url, auth_headers, session_with_retries):
-    # Primero, necesitamos un vuelo existente. Asumimos que hay un vuelo o lo creamos.
-    # En este ejemplo, vamos a crear un vuelo para asegurarnos.
-    # Crear aerolínea
+    """
+    Flujo completo:
+      1. Crear aerolínea.
+      2. Crear vuelo asociado a la aerolínea.
+      3. Crear reserva para el vuelo.
+    Valida que la reserva se confirme y cumpla el esquema esperado.
+    """
+
+    # Crear aerolínea de prueba
     airline_id = random_id()
     airline_data = {
         "id": airline_id,
@@ -35,7 +54,7 @@ def test_create_booking_success(base_url, auth_headers, session_with_retries):
     except Exception as e:
         pytest.skip(f"No se pudo crear la aerolínea: {str(e)}")
 
-    # Crear vuelo
+    # Crear vuelo asociado
     flight_id = random_id()
     flight_data = {
         "id": flight_id,
@@ -62,7 +81,7 @@ def test_create_booking_success(base_url, auth_headers, session_with_retries):
     except Exception as e:
         pytest.skip(f"No se pudo crear el vuelo: {str(e)}")
 
-    # Ahora creamos la reserva
+    # Crear la reserva sobre el vuelo recién creado
     booking_data = {
         "flight_id": flight_id,
         "passenger_name": "John",
@@ -82,6 +101,7 @@ def test_create_booking_success(base_url, auth_headers, session_with_retries):
         if response.status_code >= 500:
             pytest.xfail(f"Error del servidor (500) al crear reserva: {response.text}")
 
+        # Validaciones
         assert response.status_code == 201, f"Expected 201, got {response.status_code}"
         booking = response.json()
         assert "id" in booking
@@ -93,10 +113,13 @@ def test_create_booking_success(base_url, auth_headers, session_with_retries):
         pytest.xfail(f"Error al crear reserva: {str(e)}")
 
 
-# 2. Crear reserva para vuelo inexistente
+# -----------------------------------------------------------
+# TEST 2: Crear reserva para vuelo inexistente
+# -----------------------------------------------------------
 def test_create_booking_nonexistent_flight(base_url, auth_headers, session_with_retries):
+    """Valida que no se pueda crear una reserva para un vuelo inexistente (espera 400)."""
     booking_data = {
-        "flight_id": "FL999",  # Vuelo que no existe
+        "flight_id": "FL999",  # Vuelo inexistente
         "passenger_name": "John",
         "passenger_email": "john@email.com",
         "seat": "15A",
@@ -114,7 +137,6 @@ def test_create_booking_nonexistent_flight(base_url, auth_headers, session_with_
         if response.status_code >= 500:
             pytest.xfail(f"Error del servidor (500) al crear reserva: {response.text}")
 
-        # Esperamos un 400 (Bad Request) por vuelo inexistente
         assert response.status_code == 400, f"Expected 400, got {response.status_code}"
     except RetryError as e:
         pytest.xfail(f"Error de conexión después de múltiples intentos: {e}")
@@ -122,8 +144,11 @@ def test_create_booking_nonexistent_flight(base_url, auth_headers, session_with_
         pytest.xfail(f"Error al crear reserva: {str(e)}")
 
 
-# 3. Obtener todas las reservas
+# -----------------------------------------------------------
+# TEST 3: Obtener todas las reservas
+# -----------------------------------------------------------
 def test_get_all_bookings(base_url, auth_headers, session_with_retries):
+    """Valida que se puedan obtener todas las reservas (lista JSON)."""
     try:
         response = session_with_retries.get(
             f"{base_url}/bookings",
@@ -143,17 +168,13 @@ def test_get_all_bookings(base_url, auth_headers, session_with_retries):
         pytest.xfail(f"Error al obtener reservas: {str(e)}")
 
 
-# 4. Obtener una reserva específica
+# -----------------------------------------------------------
+# TEST 4: Obtener una reserva específica
+# -----------------------------------------------------------
 def test_get_booking_by_id(base_url, auth_headers, session_with_retries):
-    # Primero creamos una reserva para obtener su ID
-    # Crear aerolínea, vuelo y reserva (similar al primer test)
-    # ... (código omitido por brevedad, similar al primer test para crear reserva)
-
-    # Supongamos que tenemos una reserva creada y su ID
-    # En lugar de repetir el código, podríamos tener un fixture para crear una reserva
-    # Pero por ahora, si no hay reservas, saltamos la prueba
+    """Valida la obtención de una reserva específica por ID."""
     try:
-        # Intentamos obtener una reserva existente, si no hay, saltamos
+        # Buscar reservas existentes
         response_all = session_with_retries.get(
             f"{base_url}/bookings",
             headers=auth_headers,
@@ -164,6 +185,7 @@ def test_get_booking_by_id(base_url, auth_headers, session_with_retries):
 
         booking_id = response_all.json()[0]["id"]
 
+        # Obtener reserva por ID
         response = session_with_retries.get(
             f"{base_url}/bookings/{booking_id}",
             headers=auth_headers,
@@ -182,12 +204,11 @@ def test_get_booking_by_id(base_url, auth_headers, session_with_retries):
         pytest.xfail(f"Error al obtener reserva por ID: {str(e)}")
 
 
-# 5. Cancelar una reserva
+# -----------------------------------------------------------
+# TEST 5: Cancelar una reserva
+# -----------------------------------------------------------
 def test_cancel_booking(base_url, auth_headers, session_with_retries):
-    # Crear una reserva para cancelarla
-    # ... (código para crear reserva, similar al primer test)
-
-    # Obtener una reserva existente que esté confirmada
+    """Valida que una reserva confirmada pueda cancelarse exitosamente."""
     try:
         response_all = session_with_retries.get(
             f"{base_url}/bookings",
@@ -197,13 +218,9 @@ def test_cancel_booking(base_url, auth_headers, session_with_retries):
         if response_all.status_code != 200:
             pytest.skip("No se pudieron obtener reservas")
 
-        # Buscar una reserva con estado "confirmed"
+        # Buscar una reserva confirmada
         bookings = response_all.json()
-        booking_to_cancel = None
-        for booking in bookings:
-            if booking.get("status") == "confirmed":
-                booking_to_cancel = booking
-                break
+        booking_to_cancel = next((b for b in bookings if b.get("status") == "confirmed"), None)
 
         if not booking_to_cancel:
             pytest.skip("No hay reservas confirmadas para cancelar")
@@ -222,7 +239,7 @@ def test_cancel_booking(base_url, auth_headers, session_with_retries):
 
         assert response.status_code == 200, f"Expected 200, got {response.status_code}"
 
-        # Verificar que la reserva ahora está cancelada
+        # Validar que la reserva ahora esté en estado "cancelled"
         response_updated = session_with_retries.get(
             f"{base_url}/bookings/{booking_id}",
             headers=auth_headers,
@@ -237,9 +254,11 @@ def test_cancel_booking(base_url, auth_headers, session_with_retries):
         pytest.xfail(f"Error al cancelar reserva: {str(e)}")
 
 
-# 6. Intentar cancelar reserva ya cancelada
+# -----------------------------------------------------------
+# TEST 6: Cancelar una reserva ya cancelada
+# -----------------------------------------------------------
 def test_cancel_already_cancelled_booking(base_url, auth_headers, session_with_retries):
-    # Buscar una reserva que ya esté cancelada
+    """Valida que intentar cancelar una reserva ya cancelada devuelva un 400 (Bad Request)."""
     try:
         response_all = session_with_retries.get(
             f"{base_url}/bookings",
@@ -249,19 +268,16 @@ def test_cancel_already_cancelled_booking(base_url, auth_headers, session_with_r
         if response_all.status_code != 200:
             pytest.skip("No se pudieron obtener reservas")
 
+        # Buscar reserva ya cancelada
         bookings = response_all.json()
-        cancelled_booking = None
-        for booking in bookings:
-            if booking.get("status") == "cancelled":
-                cancelled_booking = booking
-                break
+        cancelled_booking = next((b for b in bookings if b.get("status") == "cancelled"), None)
 
         if not cancelled_booking:
             pytest.skip("No hay reservas canceladas para probar")
 
         booking_id = cancelled_booking["id"]
 
-        # Intentar cancelar de nuevo
+        # Intentar cancelar nuevamente
         response = session_with_retries.delete(
             f"{base_url}/bookings/{booking_id}",
             headers=auth_headers,
@@ -271,7 +287,6 @@ def test_cancel_already_cancelled_booking(base_url, auth_headers, session_with_r
         if response.status_code >= 500:
             pytest.xfail(f"Error del servidor (500) al cancelar reserva: {response.text}")
 
-        # Esperamos un 400 (Bad Request) porque ya está cancelada
         assert response.status_code == 400, f"Expected 400, got {response.status_code}"
     except RetryError as e:
         pytest.xfail(f"Error de conexión después de múltiples intentos: {e}")
