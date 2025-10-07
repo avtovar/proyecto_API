@@ -187,6 +187,7 @@ Opcionalmente se pueden definir marcadores personalizados:
   
 - Confluence: [Resumen](https://ali-valentin-tovar-morales.atlassian.net/wiki/spaces/api/pages/119570436/Resumen+de+Automatizaci+n+API+para+Aerol+nea)
   
+
 ## Autor
 Ali Valentin Tovar Morales
 - QA Automation Tester
