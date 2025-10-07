@@ -12,6 +12,7 @@ from jsonschema import validate
 BASE = os.getenv("BASE_URL", "http://localhost:8000")
 
 
+
 # Número máximo de reintentos en caso de error de red/servidor
 RETRIES = int(os.getenv("API_RETRIES", "3"))
 
