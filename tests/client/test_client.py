@@ -18,6 +18,7 @@ TIMEOUT = int(os.getenv("API_TIMEOUT", "5"))            # Tiempo máximo por req
 LOGIN_SCHEMA = {
     "type": "object",
     "required": ["access_token", "token_type"],
+
     "properties": {
         "access_token": {"type": "string"},
         "token_type": {"type": "string", "enum": ["bearer"]}
