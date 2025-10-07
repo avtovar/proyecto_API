@@ -12,6 +12,7 @@ RETRIES = int(os.getenv("API_RETRIES", "3"))            # Cantidad de reintentos
 TIMEOUT = int(os.getenv("API_TIMEOUT", "5"))            # Tiempo máximo por request (segundos)
 
 
+
 # ================================================================
 # Esquemas de validación JSON (contratos de la API)
 # ================================================================
