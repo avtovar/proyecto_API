@@ -13,6 +13,7 @@ TIMEOUT = int(os.getenv("API_TIMEOUT", "5"))            # Tiempo máximo por req
 
 
 
+
 # ================================================================
 # Esquemas de validación JSON (contratos de la API)
 # ================================================================
