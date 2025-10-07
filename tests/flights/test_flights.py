@@ -253,3 +253,5 @@ def test_get_flight_by_id(base_url, auth_headers, session_with_retries):
         pytest.xfail(f"Error de conexión tras múltiples intentos: {e}")
     except Exception as e:
         pytest.xfail(f"Error inesperado al obtener vuelo por ID: {str(e)}")
+
+
