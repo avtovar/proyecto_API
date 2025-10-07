@@ -199,8 +199,8 @@ Roberto Gamboa López
 
 - QA Automation Tester
 - Chiapas, México
-- [Tu email]
-- LinkedIn
+- robertogamboa.9006@gmail.com
+- [LinkedIn](https://www.linkedin.com/in/robertogamboa07/) 
 
 Sergio Solano
 
