@@ -207,6 +207,6 @@ Roberto Gamboa López
 Sergio Solano
 
 - QA Automation Tester
-- Chiapas, México
-- [Tu email]
-- LinkedIn
+- Villavicencio, Colombia
+- sergiosolanoc@gmail.com 
+- [LinkedIn](https://www.linkedin.com/in/sergiosc-qa-tester/)
