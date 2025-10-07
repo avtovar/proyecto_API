@@ -19,7 +19,6 @@ RETRIES = int(os.getenv("API_RETRIES", "3"))
 # Tiempo máximo de espera para cada request (en segundos)
 TIMEOUT = int(os.getenv("API_TIMEOUT", "5"))
 
-
 # ======================================================
 # Esquemas de validación JSON
 # ======================================================
